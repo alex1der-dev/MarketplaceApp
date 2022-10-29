@@ -28,25 +28,38 @@ public class UserView {
 
     public void displayAllUsers() {
         List<User> users = userController.getAllUsers();
-        for (User u : users) {
-            System.out.println(u);
+        if (users == null || users.isEmpty()) {
+            System.out.println("No registered users");
+            return;
         }
+        System.out.println("Registered users: ");
+        users.forEach(System.out::println);
     }
 
     public void buyProduct() {
-
-        System.out.println("Enter user ID: ");
-        System.out.println("Registered users: ");
+        List<User> usersAll = userController.getAllUsers();
+        if (usersAll==null||usersAll.isEmpty()) {
+            System.out.println("No registered users.");
+            return;
+        }
+        List<Product> productsAll = productController.getAllProducts();
+        if (productsAll==null||productsAll.isEmpty()) {
+            System.out.println("No existing products.");
+            return;
+        }
         displayAllUsers();
+        System.out.println("Enter user ID: ");
         Long userId = consoleReader.readNumericValue();
-        System.out.println("Enter product ID: ");
-        System.out.println("Existing products: ");
         productView.displayAllProducts();
+        System.out.println("Enter product ID: ");
         Long productId = consoleReader.readNumericValue();
         try {
             userController.buyProduct(userId, productId);
-        } catch (IllegalArgumentException e) {
-            System.out.println("User has not enough money " + userController.getUserById(userId).getMoneyAmount()
+        } catch (UnsupportedOperationException e) {
+            String userFullName = userController.getUserById(userId).getFirstName()
+                    + userController.getUserById(userId).getLastName();
+            System.out.println("User " + userFullName
+                    + " has not enough money " + userController.getUserById(userId).getMoneyAmount()
                     + " to buy product " + productController.getProductById(productId).getName()
                     + " with price " + productController.getProductById(productId).getPrice());
         }
@@ -55,18 +68,18 @@ public class UserView {
 
     public void displayUserProducts() {
         System.out.println("Enter user ID: ");
-        System.out.println("Registered users: ");
         displayAllUsers();
         Long userId = consoleReader.readNumericValue();
-        List<Product> userProducts = userController.getUserProducts(userId);
-        for (Product p : userProducts) {
-            System.out.println(p);
+        try {
+            List<Product> userProducts = userController.getUserProducts(userId);
+            userProducts.forEach(System.out::println);
+        } catch (NullPointerException e) {
+            System.out.println("User has no products");
         }
     }
 
     public void displayUsersHaveProduct() {
         System.out.println("Enter product ID users bought: ");
-        System.out.println("Existing products: ");
         productView.displayAllProducts();
         Long productId = consoleReader.readNumericValue();
         List<User> userHaveProducts = userController.getUserByProductId(productId);
@@ -76,10 +89,18 @@ public class UserView {
     }
 
     public void deleteUser() {
+        try {
+            displayAllUsers();
+        } catch (IllegalArgumentException e) {
+            System.out.println("No registered users");
+            return;
+        }
+
         System.out.println("Enter user ID to delete: ");
-        System.out.println("Registered users: ");
-        displayAllUsers();
         Long userId = consoleReader.readNumericValue();
+        String userToDelete = userController.getUserById(userId).toString();
         userController.removeUser(userId);
+        System.out.println(userToDelete);
+        System.out.println("Successfully deleted.");
     }
 }

@@ -2,6 +2,7 @@ package com.gson.repository.gson;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.gson.model.Product;
 import com.gson.repository.UserRepository;
 import com.gson.model.User;
 
@@ -9,9 +10,9 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public class GsonUserRepositoryImpl implements UserRepository {
@@ -40,16 +41,13 @@ public class GsonUserRepositoryImpl implements UserRepository {
     }
 
     private Long generateId(List<User> users) {
-        return (users.size() == 0 ? 1L : users.get(users.size()-1).getId()+1L);
+        User userMaxId = users.stream().max(Comparator.comparing(User::getId)).orElse(null);
+        return Objects.nonNull(userMaxId) ? userMaxId.getId() + 1L : 1L;
     }
 
     public User getById(Long id) {
-        for (User u : getUsersInternal()) {
-            if (u.getId().equals(id)) {
-                return u;
-            }
-        }
-        return null;
+
+        return getUsersInternal().stream().filter(u -> u.getId().equals(id)).findFirst().orElse(null);
     }
 
     @Override
@@ -70,34 +68,56 @@ public class GsonUserRepositoryImpl implements UserRepository {
     @Override
     public User update(User user) {
         List<User> existingUsers = getUsersInternal();
-        User updatedUser = null;
-        for (User u : existingUsers) {
+
+        existingUsers.forEach(u -> {
             if (u.getId().equals(user.getId())) {
                 u.setFirstName(user.getFirstName());
                 u.setLastName(user.getLastName());
                 u.setMoneyAmount(user.getMoneyAmount());
                 u.setProducts(user.getProducts());
-                updatedUser = u;
-                break;
             }
-        }
+        });
         writeUsersInternal(existingUsers);
 
-        return updatedUser;
+        return user;
     }
 
     @Override
-    public void deleteById(Long aLong) {
+    public void deleteById(Long id) {
         List<User> existingUsers = getUsersInternal();
-        User userToDelete = null;
-        for (User u : existingUsers) {
-            if (u.getId().equals(aLong)) {
-                userToDelete = u;
-            }
-        }
-        if (userToDelete != null) {
-            existingUsers.remove(userToDelete);
-        }
+        existingUsers.removeIf(u -> u.getId().equals(id));
         writeUsersInternal(existingUsers);
+    }
+
+    @Override
+    public void deleteUserProductById(Product productToDelete) {
+        List<User> existingUsers = getUsersInternal();
+
+        existingUsers.forEach(u -> {
+            List<Product> userProductsUpdated = u.getProducts();
+            if (userProductsUpdated != null) {
+                userProductsUpdated.remove(productToDelete);
+                update(u);
+            }
+        });
+        writeUsersInternal(existingUsers);
+    }
+
+    @Override
+    public List<User> getUsersByProduct(Product product) {
+        List<User> existingUsers = getUsersInternal();
+
+       return existingUsers.stream()
+                .filter(u -> u.getProducts().contains(product))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void buyProduct(User user, Product product) {
+        Double moneyAmount = user.getMoneyAmount() - product.getPrice();
+        user.setMoneyAmount(moneyAmount);
+        List<Product> userProducts = user.getProducts();
+        userProducts.add(product);
+        update(user);
     }
 }

@@ -46,33 +46,18 @@ public class UserController {
     }
 
     public List<User> getUserByProductId(Long id) {
-        List<User> existingUsers = getAllUsers();
-        List<User> usersHaveProduct = new ArrayList<>();
-        for (User u : existingUsers) {
-            for (Product p : u.getProducts()) {
-                if (p.getId().equals(id)) {
-                    usersHaveProduct.add(u);
-                }
-            }
-        }
-        return usersHaveProduct;
+        Product productOwned = productController.getProductById(id);
+
+        return  userRepository.getUsersByProduct(productOwned);
     }
 
     public void buyProduct(Long userId, Long productId) {
         User userBuyer = getUserById(userId);
         Product productToBuy = productController.getProductById(productId);
         if (userBuyer.getMoneyAmount() < productToBuy.getPrice()) {
-            throw new IllegalArgumentException();
+            throw new UnsupportedOperationException();
         }
-        Double moneyAmount = userBuyer.getMoneyAmount() - productToBuy.getPrice();
-        userBuyer.setMoneyAmount(moneyAmount);
-        List<Product> userBuyerProducts = userBuyer.getProducts();
-        if (userBuyerProducts == null) {
-            userBuyerProducts = new ArrayList<>();
-        }
-        userBuyerProducts.add(productToBuy);
-
-        updateUser(userId, userBuyer.getFirstName(), userBuyer.getLastName(), userBuyer.getMoneyAmount(), userBuyerProducts);
+        userRepository.buyProduct(userBuyer,productToBuy);
     }
 
     public List<Product> getUserProducts(Long userId) {
@@ -81,14 +66,7 @@ public class UserController {
     }
 
     public void deleteProductById(Long id) {
-        List<User> existingUsers = getAllUsers();
         Product productToDelete = productController.getProductById(id);
-        for (User u : existingUsers) {
-            List<Product> userProductsModified = u.getProducts();
-            if (userProductsModified != null) {
-                userProductsModified.remove(productToDelete);
-                updateUser(u.getId(), u.getFirstName(), u.getLastName(), u.getMoneyAmount(), userProductsModified);
-            }
-        }
+        userRepository.deleteUserProductById(productToDelete);
     }
 }

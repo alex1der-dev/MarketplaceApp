@@ -1,5 +1,6 @@
 package com.gson.view;
 
+import java.util.Objects;
 import java.util.Scanner;
 
 public class ConsoleReader {
@@ -8,11 +9,17 @@ public class ConsoleReader {
 
     public double readDecimalValue() {
         while (true) {
-            String value = SCANNER.nextLine();
+            String input = SCANNER.nextLine();
             try {
-                return Double.parseDouble(value);
+                Double value = Double.parseDouble(input);
+                if (value < 0) {
+                    throw new IllegalArgumentException();
+                }
+                return value;
             } catch (NumberFormatException e) {
                 System.err.println("Wrong input!");
+            } catch (IllegalArgumentException e) {
+                System.err.println("Value can't be less than 0");
             }
         }
     }
@@ -46,7 +53,7 @@ public class ConsoleReader {
         }
     }
 
-    public void closeScanner(){
+    public void closeScanner() {
         SCANNER.close();
     }
 }

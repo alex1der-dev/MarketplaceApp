@@ -1,5 +1,6 @@
 package com.gson.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class User {
@@ -9,6 +10,10 @@ public class User {
     private String lastName;
     private Double moneyAmount;
     private List<Product> products;
+
+    public User(){
+        this.products = new ArrayList<>();
+    }
 
     public Long getId() {
         return id;
@@ -57,7 +62,6 @@ public class User {
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", moneyAmount=" + moneyAmount +
-                ", products=" + products +
                 '}';
     }
 }

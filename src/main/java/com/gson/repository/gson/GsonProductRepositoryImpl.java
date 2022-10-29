@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import com.google.gson.reflect.TypeToken;
 import com.gson.repository.ProductRepository;
@@ -41,16 +39,16 @@ public class GsonProductRepositoryImpl implements ProductRepository {
     }
 
     private Long generateId(List<Product> products) {
-        return (products.size() == 0 ? 1L : products.get(products.size()-1).getId() + 1L);
+        Product productMaxId = products.stream().max(Comparator.comparing(Product::getId)).orElse(null);
+
+        return Objects.nonNull(productMaxId) ? productMaxId.getId() + 1L : 1L;
     }
 
     public Product getById(Long id) {
-        for (Product p : getProductsInternal()) {
-            if (p.getId().equals(id)) {
-                return p;
-            }
-        }
-        return null;
+        return getProductsInternal().stream()
+                .filter(p -> p.getId().equals(id))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -71,31 +69,23 @@ public class GsonProductRepositoryImpl implements ProductRepository {
     @Override
     public Product update(Product product) {
         List<Product> existingProducts = getProductsInternal();
-        Product updatedProduct = null;
-        for (Product p : existingProducts) {
+
+        existingProducts.forEach(p -> {
             if (p.getId().equals(product.getId())) {
                 p.setName(product.getName());
                 p.setPrice(product.getPrice());
-                updatedProduct = p;
             }
-        }
+        });
+
         writeProductsInternal(existingProducts);
 
-        return updatedProduct;
+        return product;
     }
 
     @Override
-    public void deleteById(Long aLong) {
+    public void deleteById(Long id) {
         List<Product> existingProducts = getProductsInternal();
-        Product productToDelete = null;
-        for (Product p : existingProducts) {
-            if (p.getId().equals(aLong)) {
-                productToDelete = p;
-            }
-        }
-        if (productToDelete != null) {
-            existingProducts.remove(productToDelete);
-        }
+        existingProducts.removeIf(p -> p.getId().equals(id));
         writeProductsInternal(existingProducts);
     }
 }
